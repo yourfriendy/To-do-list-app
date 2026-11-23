@@ -1,0 +1,38 @@
+name: Download file to Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Direct download URL
+        required: true
+      tag:
+        description: Release tag to create
+        required: true
+        default: download-1
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download file
+        env:
+          URL: ${{ inputs.url }}
+        run: |
+          mkdir dl
+          cd dl
+          curl -fL --retry 3 -OJ "$URL"
+          ls -lh
+
+      - name: Publish as release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release create "$TAG" dl/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --notes "Downloaded by workflow"
